@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Memory Match Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Main game container -->
+    <div class="game-container">
+        
+        <!-- Header with title -->
+        <header class="game-header">
+            <h1>Find Charity Water</h1>
+        </header>
+
+        <!-- Dashboard with game stats and controls -->
+        <div class="dashboard">
+            <!-- Timer display (MM:SS format) -->
+            <div class="stat-box">
+                <span class="stat-label">⏱️ Time</span>
+                <span class="stat-value" id="timer">00:00</span>
+            </div>
+
+            <!-- Move counter display -->
+            <div class="stat-box">
+                <span class="stat-label">🎯 Moves</span>
+                <span class="stat-value" id="moves">0</span>
+            </div>
+
+            <!-- Restart button to reset the game -->
+            <button class="restart-btn" id="restartBtn">🔄 Restart</button>
+        </div>
+
+        <!-- Game board container with grid role for accessibility -->
+        <div class="game-board" role="grid" aria-label="Memory card grid">
+            <!-- Cards will be generated dynamically by JavaScript -->
+        </div>
+
+        <!-- Victory modal/overlay that appears when player wins -->
+        <div class="victory-modal" id="victoryModal">
+            <div class="victory-content">
+                <h2>🎉 Victory! 🎉</h2>
+                <p>Congratulations! You've matched all the pairs!</p>
+                <div class="victory-stats">
+                    <p>Moves: <span id="finalMoves">0</span></p>
+                    <p>Time: <span id="finalTime">00:00</span></p>
+                </div>
+                <button class="restart-btn" id="victoryRestartBtn">Play Again</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Load the game script -->
+    <script src="script.js"></script>
+</body>
+</html>
