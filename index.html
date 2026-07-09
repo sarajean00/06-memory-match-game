@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Memory Match Game</title>
+    <title>Charity Water Memory Match Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,19 +19,31 @@
         <div class="dashboard">
             <!-- Timer display (MM:SS format) -->
             <div class="stat-box">
-                <span class="stat-label">⏱️ Time</span>
+                <span class="stat-label">TIME</span>
                 <span class="stat-value" id="timer">00:00</span>
             </div>
 
             <!-- Move counter display -->
             <div class="stat-box">
-                <span class="stat-label">🎯 Moves</span>
+                <span class="stat-label">MOVES</span>
                 <span class="stat-value" id="moves">0</span>
             </div>
 
+            <!-- Water points display -->
+            <div class="stat-box">
+                <span class="stat-label">POINTS</span>
+                <span class="stat-value" id="points">0</span>
+            </div>
+
             <!-- Restart button to reset the game -->
-            <button class="restart-btn" id="restartBtn">🔄 Restart</button>
+            <button class="restart-btn" id="restartBtn">RESTART</button>
+            <!-- Pause button to stop gameplay temporarily -->
+            <button class="restart-btn" id="pauseBtn" aria-pressed="false">PAUSE</button>
+            <!-- Mute toggle for sounds -->
+            <button class="restart-btn" id="muteBtn" aria-pressed="false">🔊</button>
         </div>
+
+        <div class="status-message" id="statusMessage">Find the water-themed pairs and help earn points!</div>
 
         <!-- Game board container with grid role for accessibility -->
         <div class="game-board" role="grid" aria-label="Memory card grid">
@@ -46,7 +58,9 @@
                 <div class="victory-stats">
                     <p>Moves: <span id="finalMoves">0</span></p>
                     <p>Time: <span id="finalTime">00:00</span></p>
+                    <p>Water Points: <span id="finalPoints">0</span></p>
                 </div>
+                <div><audio id="victoryAudio" src="sounds/cartoon-music-game-sfx-kids-game-victory-504518%20copy.mp3" preload="auto"></audio></div>
                 <button class="restart-btn" id="victoryRestartBtn">Play Again</button>
             </div>
         </div>

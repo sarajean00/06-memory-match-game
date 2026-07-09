@@ -10,8 +10,8 @@
    ============================================ */
 
 const gameState = {
-    // Array of emoji pairs (8 unique pairs = 16 cards total)
-    emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'],
+    // Array of water-themed emoji pairs (8 unique pairs = 16 cards total)
+    emojis: ['💧', '🌊', '🚰', '💦', '💙', '🌍', '🌱', '🫶'],
     
     // Game board cards with shuffle
     cards: [],
@@ -24,16 +24,91 @@ const gameState = {
     
     // Total number of moves made
     moves: 0,
+
+    // Water points earned by matching cards
+    points: 0,
     
     // Elapsed time in seconds
     elapsedTime: 0,
     
+    // Whether the timer has started yet
+    timerStarted: false,
+    // Whether sound is muted
+    soundMuted: false,
+    
     // Game active state (false during match checking)
     isGameActive: true,
+
+    // Whether the game is currently paused
+    isPaused: false,
     
     // Timer interval ID for cleanup
     timerInterval: null
 };
+
+// Load sound effects
+const soundEffects = {
+    flip: new Audio('sounds/lolo_s-stop-474070.mp3'),
+    match: new Audio('sounds/match sound.mp3')
+};
+
+function updateMuteButton() {
+    const btn = document.getElementById('muteBtn');
+    if (!btn) return;
+    btn.textContent = gameState.soundMuted ? '🔇' : '🔊';
+    btn.setAttribute('aria-pressed', String(gameState.soundMuted));
+}
+
+function toggleSound() {
+    gameState.soundMuted = !gameState.soundMuted;
+    updateMuteButton();
+}
+
+function updatePointsDisplay() {
+    const pointsElement = document.getElementById('points');
+    if (pointsElement) {
+        pointsElement.textContent = gameState.points;
+    }
+}
+
+function updateStatusMessage(message) {
+    const statusMessage = document.getElementById('statusMessage');
+    if (statusMessage) {
+        statusMessage.textContent = message;
+    }
+}
+
+function updatePauseButton() {
+    const btn = document.getElementById('pauseBtn');
+    if (!btn) return;
+    btn.textContent = gameState.isPaused ? 'RESUME' : 'PAUSE';
+    btn.setAttribute('aria-pressed', String(gameState.isPaused));
+}
+
+function togglePause() {
+    if (gameState.matchedPairs === gameState.emojis.length) {
+        return;
+    }
+
+    gameState.isPaused = !gameState.isPaused;
+
+    const gameBoard = document.querySelector('.game-board');
+    if (gameBoard) {
+        gameBoard.classList.toggle('paused', gameState.isPaused);
+    }
+
+    if (gameState.isPaused) {
+        stopTimer();
+        gameState.isGameActive = false;
+    } else {
+        gameState.isGameActive = true;
+        if (gameState.timerStarted && !gameState.timerInterval) {
+            startTimer();
+        }
+    }
+
+    updatePauseButton();
+}
 
 /* ============================================
    2. FISHER-YATES SHUFFLING ALGORITHM
@@ -69,8 +144,10 @@ function initializeGame() {
     gameState.flippedCards = [];
     gameState.matchedPairs = 0;
     gameState.moves = 0;
+    gameState.points = 0;
     gameState.elapsedTime = 0;
     gameState.isGameActive = true;
+    gameState.isPaused = false;
     
     // Create pairs: duplicate each emoji (8 emojis → 16 cards)
     const cardPairs = [...gameState.emojis, ...gameState.emojis];
@@ -81,8 +158,16 @@ function initializeGame() {
     // Update the UI
     updateGameBoard();
     updateMoveCounter();
+    updatePointsDisplay();
+    updateStatusMessage('Find the water-themed pairs and help earn points!');
     resetTimer();
     hideVictoryModal();
+    updatePauseButton();
+
+    const gameBoard = document.querySelector('.game-board');
+    if (gameBoard) {
+        gameBoard.classList.remove('paused');
+    }
 }
 
 /* ============================================
@@ -113,7 +198,7 @@ function updateGameBoard() {
         // Create the card front (question mark side)
         const cardFront = document.createElement('div');
         cardFront.classList.add('card-front');
-        cardFront.textContent = '?';
+        cardFront.textContent = '💧';
         
         // Create the card back (emoji side)
         const cardBack = document.createElement('div');
@@ -141,22 +226,34 @@ function updateGameBoard() {
 function handleCardClick(event) {
     // Get the clicked card element
     const clickedCard = event.currentTarget;
-    
     // Get the card's index
     const cardIndex = parseInt(clickedCard.getAttribute('data-index'));
     
     // Do not allow click if:
+    // - Game is paused
     // - Game is not active (match checking in progress)
     // - Card is already flipped
     // - Card is already matched
     // - More than 2 cards are flipped
     if (
+        gameState.isPaused ||
         !gameState.isGameActive ||
         clickedCard.classList.contains('flipped') ||
         clickedCard.classList.contains('matched') ||
         gameState.flippedCards.length >= 2
     ) {
         return;
+    }
+
+    // Start timer when the first card is flipped
+    if (!gameState.timerStarted) {
+        startTimer();
+        gameState.timerStarted = true;
+    }
+    // Play flip sound (unless muted)
+    if (!gameState.soundMuted && soundEffects && soundEffects.flip) {
+        try { soundEffects.flip.currentTime = 0; } catch (e) {}
+        soundEffects.flip.play();
     }
     
     // Add flipped class to flip the card
@@ -201,6 +298,11 @@ function checkForMatch() {
         
         // Delay animation, then mark as matched
         setTimeout(function() {
+            // Play match sound if not muted
+            if (!gameState.soundMuted && soundEffects && soundEffects.match) {
+                try { soundEffects.match.currentTime = 0; } catch (e) {}
+                soundEffects.match.play();
+            }
             card1.element.classList.add('matched');
             card2.element.classList.add('matched');
             
@@ -210,6 +312,9 @@ function checkForMatch() {
             
             // Increment matched pairs counter
             gameState.matchedPairs++;
+            gameState.points += 25;
+            updatePointsDisplay();
+            updateStatusMessage(`Great match! You earned 25 water points. Pair ${gameState.matchedPairs} of ${gameState.emojis.length} found.`);
             
             // Reset flipped cards array
             gameState.flippedCards = [];
@@ -241,6 +346,7 @@ function checkForMatch() {
             
             // Reset flipped cards array
             gameState.flippedCards = [];
+            updateStatusMessage('Not a match. Try again!');
             
             // Allow game to continue
             gameState.isGameActive = true;
@@ -254,6 +360,8 @@ function checkForMatch() {
    ============================================ */
 
 function startTimer() {
+    stopTimer();
+
     // Start a timer that ticks every second
     gameState.timerInterval = setInterval(function() {
         gameState.elapsedTime++;
@@ -274,18 +382,21 @@ function updateTimerDisplay() {
     timerElement.textContent = timeString;
 }
 
-function resetTimer() {
-    // Stop existing timer if running
+function stopTimer() {
     if (gameState.timerInterval) {
         clearInterval(gameState.timerInterval);
+        gameState.timerInterval = null;
     }
+}
+
+function resetTimer() {
+    // Stop existing timer if running
+    stopTimer();
     
-    // Reset elapsed time
+    // Reset elapsed time and timer state
     gameState.elapsedTime = 0;
+    gameState.timerStarted = false;
     updateTimerDisplay();
-    
-    // Start a fresh timer
-    startTimer();
 }
 
 /* ============================================
@@ -308,8 +419,13 @@ function updateMoveCounter() {
 
 function endGame() {
     // Stop the timer
-    if (gameState.timerInterval) {
-        clearInterval(gameState.timerInterval);
+    stopTimer();
+    gameState.isPaused = false;
+    updatePauseButton();
+    
+    const gameBoard = document.querySelector('.game-board');
+    if (gameBoard) {
+        gameBoard.classList.remove('paused');
     }
     
     // Mark game as inactive
@@ -317,6 +433,8 @@ function endGame() {
     
     // Update victory modal with final stats
     document.getElementById('finalMoves').textContent = gameState.moves;
+    document.getElementById('finalPoints').textContent = gameState.points;
+    updateStatusMessage(`Amazing work! You earned ${gameState.points} water points.`);
     
     const minutes = Math.floor(gameState.elapsedTime / 60);
     const seconds = gameState.elapsedTime % 60;
@@ -382,6 +500,24 @@ function setupEventListeners() {
         victoryRestartBtn.addEventListener('click', function() {
             restartGame();
         });
+    }
+
+    // Pause button
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', function() {
+            togglePause();
+        });
+        updatePauseButton();
+    }
+
+    // Mute toggle button
+    const muteBtn = document.getElementById('muteBtn');
+    if (muteBtn) {
+        muteBtn.addEventListener('click', function() {
+            toggleSound();
+        });
+        updateMuteButton();
     }
 }
 
